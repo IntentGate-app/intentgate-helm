@@ -1,0 +1,3 @@
+# Canonical example masterKey value (bytes 0x00-0x1F base64-encoded) used in docs/tests
+a46c831e2d55acb248ba67093184f51579640068:tests/values-prod.yaml:generic-api-key:11
+f5b6a2668357ee261c0255691bc235fb8127fcbc:README.md:generic-api-key:66
