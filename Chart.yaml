@@ -17,7 +17,7 @@ type: application
 # in-memory backends are unaffected but should still upgrade for
 # consistency. See gateway v1.6.1 release notes for details:
 #   https://github.com/IntentGate-app/intentgate-gateway/releases/tag/v1.6.1
-version: 0.6.1
+version: 0.7.0
 
 # The gateway image tag this chart's defaults reference. Extractor
 # stays pinned to its own released tag in values.yaml (0.1.0, unchanged
