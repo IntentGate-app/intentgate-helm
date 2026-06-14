@@ -1,21 +1,21 @@
 # IntentGate Helm chart
 
-[![CI](https://github.com/NetGnarus/intentgate-helm/actions/workflows/ci.yml/badge.svg)](https://github.com/NetGnarus/intentgate-helm/actions/workflows/ci.yml)
+[![CI](https://github.com/IntentGate-app/intentgate-helm/actions/workflows/ci.yml/badge.svg)](https://github.com/IntentGate-app/intentgate-helm/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Helm chart](https://img.shields.io/badge/ghcr.io-charts%2Fintentgate-2188ff.svg)](https://github.com/NetGnarus/intentgate-helm/pkgs/container/charts%2Fintentgate)
+[![Helm chart](https://img.shields.io/badge/ghcr.io-charts%2Fintentgate-2188ff.svg)](https://github.com/IntentGate-app/intentgate-helm/pkgs/container/charts%2Fintentgate)
 
-Deploys the [IntentGate gateway](https://github.com/NetGnarus/intentgate-gateway)
-and (optionally) the [intent extractor](https://github.com/NetGnarus/intentgate-extractor)
+Deploys the [IntentGate gateway](https://github.com/IntentGate-app/intentgate-gateway)
+and (optionally) the [intent extractor](https://github.com/IntentGate-app/intentgate-extractor)
 into a Kubernetes cluster.
 
 ## Companion repositories
 
 | Repo | Purpose |
 | ---- | ------- |
-| [intentgate-gateway](https://github.com/NetGnarus/intentgate-gateway) | Go gateway with the four-check pipeline. Deployed by this chart. |
-| [intentgate-extractor](https://github.com/NetGnarus/intentgate-extractor) | Optional FastAPI service for intent extraction. Deployed by this chart when `extractor.enabled: true`. |
-| [intentgate-sdk-python](https://github.com/NetGnarus/intentgate-sdk-python) | Python SDK that talks to the deployed gateway. |
-| [intentgate-helm](https://github.com/NetGnarus/intentgate-helm) | This chart. |
+| [intentgate-gateway](https://github.com/IntentGate-app/intentgate-gateway) | Go gateway with the four-check pipeline. Deployed by this chart. |
+| [intentgate-extractor](https://github.com/IntentGate-app/intentgate-extractor) | Optional FastAPI service for intent extraction. Deployed by this chart when `extractor.enabled: true`. |
+| [intentgate-sdk-python](https://github.com/IntentGate-app/intentgate-sdk-python) | Python SDK that talks to the deployed gateway. |
+| [intentgate-helm](https://github.com/IntentGate-app/intentgate-helm) | This chart. |
 
 ## What it deploys
 
@@ -43,7 +43,7 @@ The chart is published to GHCR as an OCI artifact on every `vX.Y.Z` git
 tag. Helm 3.7+ pulls from OCI directly:
 
 ```sh
-helm install intentgate oci://ghcr.io/netgnarus/charts/intentgate \
+helm install intentgate oci://ghcr.io/intentgate-app/charts/intentgate \
   --version 0.1.0 \
   --namespace intentgate --create-namespace
 ```
@@ -51,17 +51,17 @@ helm install intentgate oci://ghcr.io/netgnarus/charts/intentgate \
 To pin to the latest published minor:
 
 ```sh
-helm install intentgate oci://ghcr.io/netgnarus/charts/intentgate \
+helm install intentgate oci://ghcr.io/intentgate-app/charts/intentgate \
   --version "~0.1" \
   --namespace intentgate --create-namespace
 ```
 
-Available versions: https://github.com/NetGnarus/intentgate-helm/pkgs/container/charts%2Fintentgate
+Available versions: https://github.com/IntentGate-app/intentgate-helm/pkgs/container/charts%2Fintentgate
 
 ## Quick start from source (single-replica dev)
 
 ```sh
-git clone https://github.com/NetGnarus/intentgate-helm.git
+git clone https://github.com/IntentGate-app/intentgate-helm.git
 helm install intentgate ./intentgate-helm \
   --namespace intentgate --create-namespace
 ```
@@ -122,7 +122,7 @@ See [`values.yaml`](values.yaml) for the canonical reference. Highlights:
 | Path                                | Default                  | Notes                                                                  |
 | ----------------------------------- | ------------------------ | ---------------------------------------------------------------------- |
 | `gateway.replicaCount`              | `1`                      | >1 only with `redisUrl` set.                                           |
-| `gateway.image.repository`          | `ghcr.io/netgnarus/intentgate-gateway` |                                                          |
+| `gateway.image.repository`          | `ghcr.io/intentgate-app/intentgate-gateway` |                                                          |
 | `gateway.image.tag`                 | `""` → chart appVersion  |                                                                        |
 | `gateway.requireCapability`         | `false`                  | Set `true` in production.                                              |
 | `gateway.requireIntent`             | `false`                  | Requires `extractor.enabled` or an external extractor.                 |

@@ -86,7 +86,7 @@ Where to look next
 ==============================================================================
 
 - Audit events:       kubectl logs deploy/{{ include "intentgate.gateway.fullname" . }} | grep '"event":"intentgate.tool_call"'
-- Gateway README:     https://github.com/NetGnarus/intentgate-gateway
+- Gateway README:     https://github.com/IntentGate-app/intentgate-gateway
 - Python SDK:         pip install intentgate
 - Customer policies:  set values.gateway.policy or values.gateway.existingPolicyConfigMap
 

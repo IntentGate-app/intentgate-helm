@@ -16,7 +16,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  CHART_REPO: netgnarus/charts
+  CHART_REPO: intentgate-app/charts
 
 jobs:
   publish:

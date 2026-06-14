@@ -18,7 +18,7 @@ gateway:
   replicaCount: 1
 
   image:
-    repository: ghcr.io/netgnarus/intentgate-gateway
+    repository: ghcr.io/intentgate-app/intentgate-gateway
     tag: ""             # "" -> chart appVersion
     pullPolicy: IfNotPresent
 
@@ -250,7 +250,7 @@ extractor:
   replicaCount: 1
 
   image:
-    repository: ghcr.io/netgnarus/intentgate-extractor
+    repository: ghcr.io/intentgate-app/intentgate-extractor
     # Pinned: extractor releases independently of the gateway/chart. Bump
     # this only when a new extractor image is published. Empty would fall
     # back to chart appVersion, which tracks the gateway.
@@ -315,7 +315,7 @@ demoUpstream:
   replicaCount: 1
 
   image:
-    repository: ghcr.io/netgnarus/intentgate-demo-toolserver
+    repository: ghcr.io/intentgate-app/intentgate-demo-toolserver
     tag: "0.1.0"
     pullPolicy: IfNotPresent
 

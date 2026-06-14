@@ -16,24 +16,24 @@ type: application
 # escalate-event canonical hash columns). Deployments using
 # in-memory backends are unaffected but should still upgrade for
 # consistency. See gateway v1.6.1 release notes for details:
-#   https://github.com/NetGnarus/intentgate-gateway/releases/tag/v1.6.1
+#   https://github.com/IntentGate-app/intentgate-gateway/releases/tag/v1.6.1
 version: 0.6.1
 
 # The gateway image tag this chart's defaults reference. Extractor
 # stays pinned to its own released tag in values.yaml (0.1.0, unchanged
 # this cycle). Demo-upstream image (from 0.6.0's demoUpstream block)
 # also unchanged at 0.1.0:
-#   ghcr.io/netgnarus/intentgate-demo-toolserver:0.1.0
+#   ghcr.io/intentgate-app/intentgate-demo-toolserver:0.1.0
 appVersion: "1.6.1"
 
-home: https://github.com/NetGnarus/intentgate-gateway
+home: https://github.com/IntentGate-app/intentgate-gateway
 sources:
-  - https://github.com/NetGnarus/intentgate-gateway
-  - https://github.com/NetGnarus/intentgate-extractor
+  - https://github.com/IntentGate-app/intentgate-gateway
+  - https://github.com/IntentGate-app/intentgate-extractor
 
 maintainers:
   - name: IntentGate contributors
-    url: https://github.com/NetGnarus
+    url: https://github.com/IntentGate-app
 
 keywords:
   - ai-agents
