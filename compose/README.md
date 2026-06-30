@@ -16,9 +16,9 @@ or these files directly — they produce the same result.
 This is the **Install** stage of the journey. When it's done you open the
 console and continue: Discover → Govern → Attest → Prove.
 
-> Full prerequisites checklist: **IntentGate-Before-You-Install.html**.
-> Full HA / resiliency detail (load balancer, Redis, failure modes):
-> **IntentGate-Resiliency-HA.html**.
+> Full prerequisites checklist: **IntentGate-Before-You-Install.html** (in this bundle).
+> Post-install guides — Operator Journey, Routing &amp; Securing Agents, Resiliency &amp;
+> HA, Operator Manual — live in the console's **Resources** menu once you're running.
 
 ---
 
@@ -217,6 +217,14 @@ ownership → Prove with reports. The console walks you through each.
 
 ## Documentation
 
-- **IntentGate-Before-You-Install.html** — prerequisites & checklists (single node).
-- **IntentGate-Resiliency-HA.html** — high availability: load balancer (who
-  owns it, what to configure), Redis, managed Postgres, failure modes, scaling.
+In this bundle (read before / during install):
+
+- **IntentGate-Before-You-Install.html** — prerequisites & checklists.
+- **README.md** — these install steps.
+
+In the console → **Resources** (after install, customer-locked, always current):
+
+- **Operator Journey** — step-by-step through the console (Discover → Govern → Attest → Prove).
+- **Routing & Securing Agents** — point agents at the gateway, and prevent bypass.
+- **Resiliency & HA** — load balancer, Redis, scaling, failure modes.
+- **Operator Manual** — feature-by-feature reference.
