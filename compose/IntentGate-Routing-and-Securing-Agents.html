@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IntentGate — Routing &amp; Securing Agents</title>
+<style>
+  :root{
+    --ink:#13303f; --muted:#5b6b76; --soft:#7d8a93; --line:#e6e1d6;
+    --teal:#0892c0; --teal-d:#0b4a63; --bg:#faf8f3; --card:#ffffff; --amber:#c47f12;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:48px 28px 80px}
+  header.hd{border-bottom:3px solid var(--teal);padding-bottom:22px;margin-bottom:8px}
+  .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:800;margin:0 0 8px}
+  h1{font-size:29px;line-height:1.2;margin:0 0 10px;font-weight:800;letter-spacing:-.01em}
+  .sub{font-size:16px;color:var(--muted);margin:0;max-width:64ch}
+  h2{font-size:20px;margin:36px 0 6px;font-weight:800;letter-spacing:-.01em}
+  h2 .n{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:8px;
+    background:var(--teal);color:#fff;font-size:14px;margin-right:10px;vertical-align:2px;font-weight:800}
+  h3{font-size:15px;margin:18px 0 4px;font-weight:800}
+  h3 .pick{font-size:12px;font-weight:600;color:var(--soft);margin-left:6px}
+  p{margin:8px 0}
+  .lead{font-size:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:14px 0;box-shadow:0 1px 2px rgba(20,48,63,.04)}
+  .tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#f0ece2;padding:1px 6px;border-radius:5px}
+  pre{background:#0f242e;color:#e8eef1;border-radius:10px;padding:13px 15px;overflow:auto;font-size:12.5px;line-height:1.5;margin:8px 0}
+  pre .c{color:#8aa0ab}
+  .why{border-left:3px solid var(--amber);padding:2px 0 2px 14px;margin:12px 0 2px;color:var(--muted)}
+  .why b{color:var(--ink)}
+  .star{color:var(--amber);font-weight:800}
+  hr{border:none;border-top:1px solid var(--line);margin:30px 0}
+  .note{background:#eef6fa;border:1px solid #d3e7f0;border-radius:10px;padding:10px 14px;margin:12px 0;font-size:14px}
+  footer{margin-top:46px;padding-top:18px;border-top:1px solid var(--line);color:var(--soft);font-size:13px}
+  @media print{body{background:#fff}.card{box-shadow:none}pre{background:#f3efe6;color:#13303f}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hd">
+  <p class="kicker">IntentGate · For engineers</p>
+  <h1>Routing &amp; securing agents</h1>
+  <p class="sub">Two halves of one job: point your agents <b>at</b> the gateway, and lock the tool server so they can't go <b>around</b> it. Both are needed — routing without locking leaves an open back door; locking without routing just breaks the agent.</p>
+</header>
+
+<h2>How routing works</h2>
+<p class="lead">Instead of calling the tool server directly, the agent calls the gateway at <span class="tag">/v1/mcp</span> with a <b>capability token</b>. The gateway runs the four checks (capability, intent, policy, budget), writes the decision to the audit log, and — if allowed — forwards the call to the real tool server (<span class="tag">INTENTGATE_UPSTREAM_URL</span>). The agent only ever knows the gateway's address.</p>
+
+<h2><span class="n">1</span>Mint a token for the agent</h2>
+<div class="card">
+  <p>Each agent gets its own capability token (this is what the policy and audit are keyed on). Mint it in the console — <b>Tokens</b>, or inline on the <b>Setup → Route</b> step / the agent's <b>Set up</b> button — or via the admin API:</p>
+  <pre><span class="c"># returns a token like igtok_…</span>
+curl -s -X POST "$GATEWAY/v1/admin/mint" \
+  -H "Authorization: Bearer $INTENTGATE_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"subject":"refund-bot-01","tools":["issue_refund","read_invoice"]}'</pre>
+  <p>Give every agent a distinct token — never share one across agents, or you lose per-agent policy and attribution.</p>
+</div>
+
+<h2><span class="n">2</span>Point the agent at the gateway</h2>
+<p>Pick the pattern by <b>how much of the agent you can change</b>. All four send the same thing: requests to the gateway URL with the token.</p>
+
+<div class="card">
+  <h3>A · You build the agent <span class="pick">— use the SDK</span></h3>
+  <pre><span class="c"># pip install intentgate   (or npm i @intentgate-app/intentgate)</span>
+from intentgate import Gateway
+
+gw = Gateway(url="https://gateway.your-company.internal:8080", token="igtok_…")
+result = gw.call("issue_refund", {"invoice_id": 42, "amount_eur": 50})
+<span class="c"># every tool call now goes through the gateway + policy</span></pre>
+
+  <h3>B · The agent speaks MCP <span class="pick">— repoint the MCP client</span></h3>
+  <pre>{
+  "mcpServers": {
+    "tools": {
+      "url": "https://gateway.your-company.internal:8080/v1/mcp",
+      "headers": { "Authorization": "Bearer igtok_…" }
+    }
+  }
+}</pre>
+
+  <h3>C · You can edit its config but not its code <span class="pick">— swap the URL</span></h3>
+  <pre><span class="c"># Before — agent calls the tool server directly:</span>
+MCP_SERVER_URL=http://toolserver.corp:8090
+
+<span class="c"># After — agent calls the gateway, which forwards to the tool:</span>
+MCP_SERVER_URL=https://gateway.your-company.internal:8080/v1/mcp
+MCP_AUTH_HEADER="Authorization: Bearer igtok_…"
+<span class="c"># no code change — one config value + the token</span></pre>
+
+  <h3>D · You can't touch the agent at all <span class="pick">— redirect at the network</span></h3>
+  <pre><span class="c"># Point the tool's hostname at the GATEWAY; the gateway's</span>
+<span class="c"># INTENTGATE_UPSTREAM_URL points to the tool's REAL address.</span>
+DNS:  toolserver.corp.  A  &lt;gateway-ip&gt;</pre>
+  <div class="why"><b>Caveat.</b> With <span class="tag">INTENTGATE_REQUIRE_CAPABILITY=true</span> the agent still needs a token, so this path also needs a <b>token-injecting egress proxy</b> in front. If you can edit the agent's config at all, prefer pattern C — it's cleaner.</div>
+</div>
+
+<h2><span class="n">3</span>Secure it — stop the agent bypassing the gateway</h2>
+<div class="card">
+  <p><span class="star">★ The most important step.</span> Routing the agent <i>to</i> the gateway means nothing if it can still reach the tool server <i>directly</i>. Restrict the tool server to accept traffic <b>only from the gateway</b>. Pick the one matching your environment (the console's <b>Setup → Secure</b> step generates these):</p>
+
+  <h3>Host firewall / cloud security group</h3>
+  <pre><span class="c"># On the tool-server host — accept its port ONLY from the gateway:</span>
+iptables -A INPUT -p tcp --dport 8090 -s &lt;gateway-ip&gt; -j ACCEPT
+iptables -A INPUT -p tcp --dport 8090 -j DROP            <span class="c"># everyone else</span>
+<span class="c"># AWS: tool-server security group inbound —</span>
+<span class="c">#   Custom TCP 8090, Source: &lt;gateway-security-group-id&gt; (only)</span></pre>
+
+  <h3>Kubernetes (NetworkPolicy)</h3>
+  <pre>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: tools-only-from-gateway }
+spec:
+  podSelector: { matchLabels: { app: toolserver } }
+  policyTypes: [ Ingress ]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: intentgate-gateway } }
+      ports: [ { protocol: TCP, port: 8090 } ]
+<span class="c"># default-deny all other ingress to the tool pods</span></pre>
+
+  <h3>Service mesh (Istio — identity, not just network)</h3>
+  <pre>apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: { name: tools-only-gateway }
+spec:
+  selector: { matchLabels: { app: toolserver } }
+  action: ALLOW
+  rules:
+    - from: [ { source: { principals:
+        ["cluster.local/ns/intentgate/sa/intentgate-gateway"] } } ]
+<span class="c"># pair with PeerAuthentication mtls: STRICT for cryptographic identity</span></pre>
+
+  <div class="why"><b>Why this carries the weight.</b> Today bypass-prevention is network/identity-layer — the gateway does not yet inject the upstream credential, so this segmentation is what guarantees the gateway is the only door to the tools.</div>
+</div>
+
+<h2><span class="n">4</span>Verify both halves</h2>
+<div class="card">
+  <pre><span class="c"># 1. Through the gateway with a token → allowed (and audited):</span>
+curl -s -X POST "$GATEWAY/v1/mcp" \
+  -H "Authorization: Bearer igtok_…" \
+  -d '{"tool":"read_invoice","args":{"invoice_id":42}}'      <span class="c"># → result</span>
+
+<span class="c"># 2. Directly to the tool server from a non-gateway host → REFUSED:</span>
+curl -m 5 http://toolserver.corp:8090/...                     <span class="c"># → connection refused/timeout</span></pre>
+  <p>If call 1 succeeds and call 2 is refused, the agent is both <b>routed</b> and <b>contained</b>. That's a governed agent.</p>
+</div>
+
+<footer>
+  IntentGate — Routing &amp; Securing Agents. The console's <b>Setup</b> wizard generates all of the above for your values; this guide is the written reference. See also the <b>Operator Journey</b> (Govern stage) and <b>Resiliency &amp; HA</b>.
+</footer>
+
+</div>
+</body>
+</html>
