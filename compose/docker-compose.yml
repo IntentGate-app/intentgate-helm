@@ -1,0 +1,119 @@
+# IntentGate — starter bundle (single node)
+#
+# One command stands up the whole platform: Postgres, the intent
+# extractor, the gateway (enforcement), and the Pro console (UI).
+# Suitable for a pilot or a single production node. For multi-replica
+# HA (≥2 gateway replicas + Redis budget + managed Postgres) use the
+# Helm chart instead — see README.md.
+#
+#   1. cp .env.example .env   &&  fill it in
+#   2. docker login ghcr.io   (with the token IntentGate gave you)
+#   3. docker compose up -d
+#
+name: intentgate
+
+services:
+  # ---- shared store ---------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: intentgate
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
+      POSTGRES_DB: intentgate
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U intentgate -d intentgate -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks: [internal]
+
+  # ---- intent extractor ----------------------------------------------
+  # Turns an agent's stated intent into the allow/forbid lists the
+  # gateway's intent check uses. Runs in STUB mode by default (keyword
+  # heuristics, no API key). Set an LLM backend for production accuracy.
+  extractor:
+    image: ghcr.io/netgnarus/intentgate-extractor:${INTENTGATE_VERSION:-latest}
+    restart: unless-stopped
+    networks: [internal]
+
+  # ---- gateway (data plane / enforcement) ----------------------------
+  gateway:
+    image: ghcr.io/netgnarus/intentgate-gateway:${INTENTGATE_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      extractor: { condition: service_started }
+    environment:
+      INTENTGATE_ADDR: ":8080"
+      INTENTGATE_MASTER_KEY: "${INTENTGATE_MASTER_KEY:?set in .env}"
+      INTENTGATE_ADMIN_TOKEN: "${INTENTGATE_ADMIN_TOKEN:?set in .env}"
+      INTENTGATE_REQUIRE_CAPABILITY: "true"
+      INTENTGATE_REQUIRE_INTENT: "true"
+      INTENTGATE_REQUIRE_BUDGET: "true"
+      INTENTGATE_EXTRACTOR_URL: "http://extractor:8090"
+      # The tool / MCP server you are putting behind the gateway:
+      INTENTGATE_UPSTREAM_URL: "${INTENTGATE_UPSTREAM_URL:?set in .env}"
+      INTENTGATE_POSTGRES_URL: "postgres://intentgate:${POSTGRES_PASSWORD}@postgres:5432/intentgate?sslmode=disable"
+      INTENTGATE_POLICY_STORE: "postgres"
+      INTENTGATE_APPROVALS_BACKEND: "postgres"
+      INTENTGATE_AUDIT_PERSIST: "true"
+      INTENTGATE_AUDIT_TARGET: "stdout"
+      INTENTGATE_METRICS_ENABLED: "true"
+    ports:
+      # Agents call the gateway here. Bind to your internal interface in
+      # production; keep it off the public internet.
+      - "${GATEWAY_BIND:-0.0.0.0}:8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    networks: [internal]
+
+  # ---- console (control plane / UI) ----------------------------------
+  console:
+    image: ghcr.io/netgnarus/intentgate-console-pro:${INTENTGATE_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      gateway: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      INTENTGATE_GATEWAY_URL: "http://gateway:8080"
+      # The gateway URL an operator hands to an agent (what agents call
+      # from outside this host). Usually your gateway's external DNS.
+      INTENTGATE_PUBLIC_GATEWAY_URL: "${INTENTGATE_PUBLIC_GATEWAY_URL:?set in .env}"
+      INTENTGATE_ADMIN_TOKEN: "${INTENTGATE_ADMIN_TOKEN}"
+      INTENTGATE_LICENSE_KEY: "${INTENTGATE_LICENSE_KEY:?set in .env}"
+      SCIM_DATABASE_URL: "postgres://intentgate:${POSTGRES_PASSWORD}@postgres:5432/intentgate?sslmode=disable"
+      # Only a company-domain email can be set as an agent owner:
+      INTENTGATE_OWNER_EMAIL_DOMAINS: "${INTENTGATE_OWNER_EMAIL_DOMAINS:?set in .env}"
+      INTENTGATE_TOTP_ENCRYPTION_KEY: "${INTENTGATE_TOTP_ENCRYPTION_KEY:?set in .env}"
+      # Optional integrations (leave blank to disable):
+      INTENTGATE_POLICY_REQUEST_WEBHOOK_URL: "${INTENTGATE_POLICY_REQUEST_WEBHOOK_URL:-}"
+      INTENTGATE_REPORTS_API_TOKEN: "${INTENTGATE_REPORTS_API_TOKEN:-}"
+      INTENTGATE_DISCOVERY_SYNC_TOKEN: "${INTENTGATE_DISCOVERY_SYNC_TOKEN:-}"
+      # Sign-in. Production uses your IdP over OIDC; fill the OIDC_* block
+      # in .env. (Mock auth is lab-only and intentionally not set here.)
+      AUTH_PROVIDER: "oidc"
+      AUTH_SECRET: "${AUTH_SECRET:?set in .env}"
+      NEXTAUTH_URL: "${CONSOLE_PUBLIC_URL:?set in .env}"
+      OIDC_ISSUER: "${OIDC_ISSUER:-}"
+      OIDC_CLIENT_ID: "${OIDC_CLIENT_ID:-}"
+      OIDC_CLIENT_SECRET: "${OIDC_CLIENT_SECRET:-}"
+    ports:
+      # Operators open the console in a browser here. Put it behind your
+      # reverse proxy / TLS in production.
+      - "${CONSOLE_BIND:-0.0.0.0}:3000:3000"
+    networks: [internal]
+
+volumes:
+  pg-data:
+
+networks:
+  internal:
+    driver: bridge

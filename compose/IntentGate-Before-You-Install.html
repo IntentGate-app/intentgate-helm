@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IntentGate — Environment Prerequisites</title>
+<style>
+  :root{
+    --ink:#13303f; --muted:#5b6b76; --soft:#7d8a93; --line:#e6e1d6;
+    --teal:#0892c0; --teal-d:#0b4a63; --bg:#faf8f3; --card:#ffffff;
+    --amber:#c47f12; --soft-teal:#eef6fa;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:48px 28px 80px}
+  header.hd{border-bottom:3px solid var(--teal);padding-bottom:22px;margin-bottom:8px}
+  .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:800;margin:0 0 8px}
+  h1{font-size:29px;line-height:1.2;margin:0 0 10px;font-weight:800;letter-spacing:-.01em}
+  .sub{font-size:16px;color:var(--muted);margin:0;max-width:64ch}
+  h2{font-size:20px;margin:40px 0 6px;font-weight:800;letter-spacing:-.01em}
+  h2 .n{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:8px;
+    background:var(--teal);color:#fff;font-size:14px;margin-right:10px;vertical-align:2px;font-weight:800}
+  h3{font-size:15.5px;margin:20px 0 2px;font-weight:800}
+  p{margin:10px 0}
+  .lead{font-size:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0;
+    box-shadow:0 1px 2px rgba(20,48,63,.04)}
+  .meta{display:grid;grid-template-columns:148px 1fr;gap:7px 16px;margin:12px 0 2px;font-size:14.5px}
+  .meta dt{color:var(--soft);font-weight:700}
+  .meta dd{margin:0}
+  .why{border-left:3px solid var(--amber);padding:2px 0 2px 14px;margin:13px 0 4px;color:var(--muted)}
+  .why b{color:var(--ink)}
+  .pill{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    border-radius:999px;padding:3px 10px}
+  .pill.you{background:#fde9c8;color:#7a4d05}
+  .pill.box{background:#d7f0e4;color:#0b5e3e}
+  .pill.ig{background:#dbeefa;color:#0b4a63}
+  .prov{margin-top:12px;font-size:14px;color:var(--muted)}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  .check{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:14px 0}
+  .check h3{margin-top:0}
+  ul.box{list-style:none;margin:8px 0 0;padding:0}
+  ul.box li{position:relative;padding:7px 0 7px 34px;border-bottom:1px dashed var(--line);font-size:15px}
+  ul.box li:last-child{border-bottom:none}
+  ul.box li:before{content:"";position:absolute;left:2px;top:10px;width:18px;height:18px;border:2px solid var(--teal);border-radius:5px}
+  ul.box li small{display:block;color:var(--soft);font-size:13px}
+  .legend{font-size:13px;color:var(--soft);margin:8px 0 0}
+  .legend .pill{margin-right:6px}
+  .tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;background:#f0ece2;padding:1px 6px;border-radius:5px}
+  .starnote{color:var(--amber);font-weight:800;font-size:13px}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--soft);font-size:13px}
+  @media print{body{background:#fff}.card,.check{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hd">
+  <p class="kicker">IntentGate · Installation</p>
+  <h1>Environment prerequisites</h1>
+  <p class="sub">What to have in place before installing IntentGate. Prepare the items below, work through the checklists, and the install itself is three commands.</p>
+</header>
+
+<h2>How IntentGate fits</h2>
+<p class="lead">IntentGate acts as a security checkpoint between your AI agents and the tools they use. Every tool call an agent makes passes through the gateway, which checks it against your policies, allows or denies it, and records what happened. Standing that checkpoint up requires a few things in your environment: a host for it to run on, a network position where it is the only route to your tools, a way for staff to sign in, and links to the systems it works alongside. Each one is covered below, with what it is, why it’s needed, and who provides it.</p>
+
+<p class="legend"><span class="pill you">You provide</span> set up by your team &nbsp;·&nbsp; <span class="pill box">In the box</span> ships with IntentGate &nbsp;·&nbsp; <span class="pill ig">From IntentGate</span> supplied to you</p>
+
+<hr>
+
+<h2><span class="n">1</span>Host and container runtime</h2>
+<div class="card">
+  <p><b>What it is.</b> One Linux host to run IntentGate on. For a pilot, a modest instance is sufficient — roughly 4 vCPU, 8 GB RAM, 20 GB disk. IntentGate is distributed as four containers (gateway, intent extractor, database, console), so the host needs <b>Docker Engine</b> and <b>Docker Compose v2</b> to run them.</p>
+  <div class="why"><b>Why it’s needed.</b> This is where IntentGate runs. The four containers are orchestrated together by Compose from a single configuration file.</div>
+  <p class="prov"><span class="pill you">You provide</span> the host and Docker. <span class="pill box">In the box</span> the four containers.</p>
+</div>
+
+<h2><span class="n">2</span>Network placement and segmentation</h2>
+<div class="card">
+  <p><b>What it is.</b> The host has to be positioned correctly in your network, and traffic to the protected tools has to be restricted to the gateway. Three conditions:</p>
+  <div class="meta">
+    <dt>Agents → gateway</dt><dd>your agents must be able to reach the host on <b>port 8080</b> to send their tool calls.</dd>
+    <dt>Gateway → tools</dt><dd>the host must be able to reach your <b>tool / MCP server</b> to forward approved calls.</dd>
+    <dt>Segmentation</dt><dd>a <b>firewall / security-group rule</b> so the tool server accepts traffic <b>only from the gateway</b>, not directly from agents or other clients.</dd>
+  </div>
+  <p>The gateway is the checkpoint on the approved route to your tools. If any other route to the tool server is left open, traffic can detour around the checkpoint — which is why the segmentation rule matters as much as the gateway itself.</p>
+  <div class="why"><b>Why it’s needed.</b> Enforcement integrity depends on the gateway being the only path to the tools. If agents can reach the tool server directly, they can bypass IntentGate and policy is no longer guaranteed. The firewall rule closes that path. <span class="starnote">This is the single most important prerequisite.</span></div>
+  <p class="prov"><span class="pill you">You provide</span> the network routes and firewall rules (network / security team).</p>
+</div>
+
+<h2><span class="n">3</span>Image access, DNS, and TLS</h2>
+<div class="card">
+  <h3>Image access</h3>
+  <p>The container images are published to a registry (<span class="tag">ghcr.io</span>). The host needs outbound access to it — or to an internal mirror — to pull them once. IntentGate supplies a registry token for authentication.</p>
+  <h3>DNS</h3>
+  <p>Assign internal hostnames for the gateway and the console, for example <span class="tag">gateway.your-company.internal</span> and <span class="tag">console.your-company.internal</span>, so agents and operators can reach them by name.</p>
+  <h3>TLS</h3>
+  <p>Terminate HTTPS in front of the console (and the gateway) using your standard reverse proxy or load balancer with a valid certificate, so traffic is encrypted and authenticated in transit.</p>
+  <div class="why"><b>Why it’s needed.</b> To retrieve the software, to address the services by stable names, and to protect traffic — the same baseline as any internal web service.</div>
+  <p class="prov"><span class="pill you">You provide</span> outbound access, DNS records, certificates. <span class="pill ig">From IntentGate</span> the registry token.</p>
+</div>
+
+<h2><span class="n">4</span>Identity provider for sign-in (SSO)</h2>
+<div class="card">
+  <p><b>What it is.</b> IntentGate does not maintain its own user accounts or passwords for the console. It delegates authentication to your existing identity provider (IdP) over the OIDC standard — the same single sign-on your staff already use for email and other internal apps (Microsoft Entra ID, Okta, Google Workspace, and similar).</p>
+  <p>You register IntentGate as an application in your IdP once. That registration produces three values you enter into the configuration:</p>
+  <div class="meta">
+    <dt>Issuer URL</dt><dd>the address of your IdP, e.g. <span class="tag">https://login.your-company.com</span>.</dd>
+    <dt>Client ID</dt><dd>the identifier your IdP assigns to the IntentGate application.</dd>
+    <dt>Client secret</dt><dd>the credential proving the request originates from IntentGate.</dd>
+  </div>
+  <div class="why"><b>Why it’s needed.</b> So console access is limited to your employees, using credentials they already hold, with no separate user directory or passwords for IntentGate to store.</div>
+  <p class="prov"><span class="pill you">You provide</span> the IdP application registration and the three values (IT / identity team).</p>
+</div>
+
+<hr>
+
+<h2>Additional, depending on scale</h2>
+<div class="card">
+  <p><b>Database.</b> IntentGate stores policies, audit records, and inventory in PostgreSQL. For a pilot it is <span class="pill box">in the box</span> — nothing to provision. For always-on production, point IntentGate at your own managed PostgreSQL with failover.</p>
+  <p><b>Workloads to protect.</b> A tool / MCP server to place behind the gateway, and the agents that will call it — or a plan to onboard them. Starting with none is fine.</p>
+  <p><b>Local tooling.</b> <span class="tag">openssl</span> (to generate secrets), <span class="tag">curl</span>, and a terminal on the machine you work from. Docker covers the rest.</p>
+</div>
+
+<hr>
+
+<h2>Operating for resilience (high availability)</h2>
+<p class="lead">A single host is fine for a pilot. For production, companies remove the single point of failure so that one crash or restart never stops enforcement. Three changes make the platform highly available.</p>
+
+<div class="card">
+  <h3>1 · Run several gateways behind a load balancer</h3>
+  <p>Run two or more copies of the gateway and put a load balancer in front of them. If one fails, the others keep serving — the load balancer simply stops sending traffic to the failed one. The gateway holds no per-request state, so adding copies is safe and linear.</p>
+
+  <h3>2 · Give the gateways a shared Redis</h3>
+  <p>Budgets (spend and rate limits) are the one thing the gateways must agree on. Point every gateway at the same Redis by setting <span class="tag">INTENTGATE_REDIS_URL</span> on each one — the gateway then keeps its budget counters in Redis, so all copies count against one shared total. This is several checkpoints sharing a single tally board rather than each keeping its own. <b>Without Redis, each copy counts separately and a limit is effectively multiplied by the number of copies</b> — which is why Redis becomes required the moment you run more than one gateway.</p>
+
+  <h3>3 · Use managed PostgreSQL</h3>
+  <p>Move policies, audit, and inventory onto your own managed PostgreSQL with failover, rather than the bundled single instance. Note that enforcement does not depend on the database at request time — policy is held in memory and audit is streamed — so a database interruption degrades management and reporting, not protection.</p>
+
+  <p>The console stays a single instance; it sits off the traffic path, so if it restarts, agents keep calling and the gateways keep enforcing — you simply can’t manage settings until it returns.</p>
+
+  <div class="why"><b>In short.</b> Several gateways + a load balancer + shared Redis + managed PostgreSQL gives you a platform with no single point of failure on the enforcement path. The ready-to-run <span class="tag">docker-compose.ha.yml</span> in this folder wires Redis, two gateway replicas, and a load balancer; for Kubernetes, use the Helm chart.</p></div>
+  <p class="prov"><span class="pill you">You provide</span> the load balancer (or use the bundled one), a Redis endpoint, and managed PostgreSQL. <span class="pill box">In the box</span> the Redis wiring and replica configuration.</p>
+</div>
+
+<figure style="margin:22px 0 4px">
+<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;border:1px solid var(--line);border-radius:14px;background:#fff" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#56666f"/></marker>
+    <marker id="ard" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9aa7b3"/></marker>
+  </defs>
+  <rect x="22" y="60" width="956" height="516" rx="16" fill="#faf8f3" stroke="#cdd6dd" stroke-dasharray="6 5"/>
+  <text x="40" y="84" font-size="12" font-weight="700" letter-spacing="0.5" fill="#7d8a93">CUSTOMER ENVIRONMENT · high availability</text>
+
+  <!-- agents -->
+  <rect x="48" y="250" width="124" height="124" rx="10" fill="#fff" stroke="#cdd6dd"/>
+  <text x="110" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#13303f">Agents</text>
+  <rect x="62" y="262" width="96" height="28" rx="6" fill="#f1f4f6"/><text x="110" y="280" text-anchor="middle" font-size="11" fill="#5b6b76">agent</text>
+  <rect x="62" y="298" width="96" height="28" rx="6" fill="#f1f4f6"/><text x="110" y="316" text-anchor="middle" font-size="11" fill="#5b6b76">agent</text>
+  <rect x="62" y="334" width="96" height="28" rx="6" fill="#f1f4f6"/><text x="110" y="352" text-anchor="middle" font-size="11" fill="#5b6b76">agent</text>
+
+  <!-- load balancer -->
+  <rect x="240" y="282" width="112" height="60" rx="10" fill="#eef6fa" stroke="#0892c0"/>
+  <text x="296" y="308" text-anchor="middle" font-size="13" font-weight="700" fill="#0b4a63">Load</text>
+  <text x="296" y="325" text-anchor="middle" font-size="13" font-weight="700" fill="#0b4a63">balancer</text>
+
+  <!-- gateway replicas -->
+  <rect x="446" y="206" width="174" height="68" rx="12" fill="#fff" stroke="#0892c0" stroke-width="2.5"/>
+  <text x="533" y="234" text-anchor="middle" font-size="14" font-weight="800" fill="#13303f">Gateway</text>
+  <text x="533" y="252" text-anchor="middle" font-size="12" fill="#0892c0">replica 1</text>
+  <rect x="446" y="346" width="174" height="68" rx="12" fill="#fff" stroke="#0892c0" stroke-width="2.5"/>
+  <text x="533" y="374" text-anchor="middle" font-size="14" font-weight="800" fill="#13303f">Gateway</text>
+  <text x="533" y="392" text-anchor="middle" font-size="12" fill="#0892c0">replica 2</text>
+  <text x="533" y="312" text-anchor="middle" font-size="11" font-style="italic" fill="#7d8a93">stateless · scale to N</text>
+
+  <!-- tools -->
+  <rect x="730" y="276" width="166" height="68" rx="12" fill="#fff" stroke="#cdd6dd"/>
+  <text x="813" y="304" text-anchor="middle" font-size="13.5" font-weight="700" fill="#13303f">Tool / MCP</text>
+  <text x="813" y="323" text-anchor="middle" font-size="13.5" font-weight="700" fill="#13303f">servers</text>
+
+  <!-- console -->
+  <rect x="446" y="92" width="174" height="58" rx="12" fill="#fff" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="533" y="117" text-anchor="middle" font-size="13.5" font-weight="700" fill="#13303f">Console</text>
+  <text x="533" y="135" text-anchor="middle" font-size="11.5" fill="#7d6cb0">control plane · single</text>
+
+  <!-- redis -->
+  <rect x="298" y="462" width="162" height="58" rx="12" fill="#fff" stroke="#6366f1"/>
+  <text x="379" y="487" text-anchor="middle" font-size="13.5" font-weight="800" fill="#13303f">Redis</text>
+  <text x="379" y="505" text-anchor="middle" font-size="11" fill="#6366f1">shared budget · one total</text>
+
+  <!-- postgres -->
+  <rect x="688" y="452" width="218" height="96" rx="12" fill="#fff" stroke="#6366f1"/>
+  <text x="797" y="476" text-anchor="middle" font-size="13" font-weight="800" fill="#13303f">Managed PostgreSQL</text>
+  <rect x="702" y="486" width="92" height="46" rx="7" fill="#eef1fb"/><text x="748" y="508" text-anchor="middle" font-size="11" fill="#4b4fa6">primary</text><text x="748" y="522" text-anchor="middle" font-size="9.5" fill="#8a8fc4">policies·audit</text>
+  <rect x="800" y="486" width="92" height="46" rx="7" fill="#f3f4fb"/><text x="846" y="508" text-anchor="middle" font-size="11" fill="#7d80b8">standby</text><text x="846" y="522" text-anchor="middle" font-size="9.5" fill="#a7abce">failover</text>
+
+  <!-- arrows: agents -> lb -->
+  <line x1="172" y1="312" x2="238" y2="312" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="205" y="304" text-anchor="middle" font-size="10.5" fill="#7d8a93">calls</text>
+  <!-- lb -> gateways -->
+  <line x1="352" y1="302" x2="444" y2="244" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="352" y1="322" x2="444" y2="378" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="398" y="290" text-anchor="middle" font-size="10.5" fill="#7d8a93">balanced</text>
+  <!-- gateways -> tools -->
+  <line x1="620" y1="244" x2="730" y2="302" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="620" y1="378" x2="730" y2="322" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="678" y="356" text-anchor="middle" font-size="10.5" fill="#7d8a93">approved calls</text>
+  <!-- gateways -> redis -->
+  <line x1="446" y1="262" x2="384" y2="462" stroke="#6366f1" stroke-width="1.7"/>
+  <line x1="446" y1="398" x2="404" y2="462" stroke="#6366f1" stroke-width="1.7"/>
+  <!-- gateways -> postgres -->
+  <line x1="592" y1="274" x2="724" y2="452" stroke="#6366f1" stroke-width="1.7"/>
+  <line x1="596" y1="414" x2="762" y2="452" stroke="#6366f1" stroke-width="1.7"/>
+  <!-- console -> lb (admin, dashed) -->
+  <line x1="470" y1="150" x2="320" y2="280" stroke="#9aa7b3" stroke-width="1.7" stroke-dasharray="5 4" marker-end="url(#ard)"/>
+  <text x="360" y="210" text-anchor="middle" font-size="10.5" fill="#9aa7b3">admin API</text>
+  <!-- console -> postgres (dashed) -->
+  <line x1="572" y1="150" x2="792" y2="452" stroke="#9aa7b3" stroke-width="1.7" stroke-dasharray="5 4"/>
+  <text x="690" y="250" text-anchor="middle" font-size="10.5" fill="#9aa7b3">inventory</text>
+</svg>
+<figcaption style="font-size:12.5px;color:var(--soft);margin-top:8px">High-availability layout. Solid lines are the agent traffic path; blue lines are shared state (Redis budget, PostgreSQL); dashed lines are the console managing the platform off the traffic path.</figcaption>
+</figure>
+
+<hr>
+
+<h2>Checklists</h2>
+<p>Complete these before install day. When all five are satisfied, the host is ready for the three install commands in <span class="tag">README.md</span>.</p>
+
+<div class="check">
+  <h3>A · Host</h3>
+  <ul class="box">
+    <li>Linux host (~4 vCPU / 8 GB RAM / 20 GB disk for a pilot)</li>
+    <li>Docker Engine and Docker Compose v2 installed</li>
+    <li><span class="tag">openssl</span> and <span class="tag">curl</span> available on your working machine</li>
+  </ul>
+</div>
+
+<div class="check">
+  <h3>B · Network &amp; segmentation <span class="starnote">★ most important</span></h3>
+  <ul class="box">
+    <li>Agents can reach the host on port 8080</li>
+    <li>The host can reach the tool / MCP server</li>
+    <li><b>Firewall rule:</b> tool server accepts traffic only from the gateway <small>— prevents agents bypassing IntentGate</small></li>
+    <li>Outbound access to <span class="tag">ghcr.io</span> (or an internal mirror)</li>
+    <li>Internal DNS records for the gateway and console</li>
+    <li>TLS certificate and reverse proxy / load balancer for the console</li>
+  </ul>
+</div>
+
+<div class="check">
+  <h3>C · Identity (SSO)</h3>
+  <ul class="box">
+    <li>IntentGate registered as an OIDC application in your IdP</li>
+    <li>Redirect URL set to the console address</li>
+    <li>Issuer URL, Client ID, and Client secret recorded</li>
+  </ul>
+</div>
+
+<div class="check">
+  <h3>D · From IntentGate</h3>
+  <ul class="box">
+    <li>License key</li>
+    <li>Registry token for image pulls</li>
+    <li>Release version to pin (e.g. 1.6.2)</li>
+  </ul>
+</div>
+
+<div class="check">
+  <h3>E · Workloads &amp; scale</h3>
+  <ul class="box">
+    <li>A tool / MCP server to place behind the gateway</li>
+    <li>Agents that will use it <small>— or a plan to onboard them</small></li>
+    <li><i>Production:</i> managed PostgreSQL with failover</li>
+    <li><i>Multiple gateway replicas:</i> a Redis endpoint</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2>Next</h2>
+<p>With the checklists complete, proceed to installation: see <span class="tag">README.md</span> for the three commands and <span class="tag">.env.example</span> for the settings to fill in. IntentGate starts the four containers in dependency order; you then open the console in a browser and begin onboarding.</p>
+
+<footer>
+  IntentGate — environment prerequisites. Companion files in this folder: <b>README.md</b> (install steps) and <b>.env.example</b> (configuration values).
+</footer>
+
+</div>
+</body>
+</html>

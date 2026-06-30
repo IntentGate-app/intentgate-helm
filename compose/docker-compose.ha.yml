@@ -1,0 +1,135 @@
+# IntentGate — high-availability stack
+#
+# Difference from the single-node starter: two gateway replicas behind a
+# load balancer, a shared Redis so budget counters are consistent across
+# replicas, and PostgreSQL you can point at a managed instance.
+#
+#   docker compose -f docker-compose.ha.yml up -d
+#   # scale further:  docker compose -f docker-compose.ha.yml up -d --scale gateway=3
+#
+# For Kubernetes use the Helm chart instead (gateway.replicas, an external
+# Redis endpoint, and an external Postgres URL).
+#
+name: intentgate-ha
+
+services:
+  # ---- shared budget counters (makes multi-replica safe) --------------
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "no"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [internal]
+
+  # ---- database -------------------------------------------------------
+  # PRODUCTION: delete this service and set INTENTGATE_POSTGRES_URL +
+  # SCIM_DATABASE_URL in .env to your managed PostgreSQL (with failover).
+  # Kept here so the HA stack runs standalone for testing.
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: intentgate
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
+      POSTGRES_DB: intentgate
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U intentgate -d intentgate -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks: [internal]
+
+  extractor:
+    image: ghcr.io/netgnarus/intentgate-extractor:${INTENTGATE_VERSION:-latest}
+    restart: unless-stopped
+    networks: [internal]
+
+  # ---- gateway replicas (no host port; the load balancer fronts them) -
+  gateway:
+    image: ghcr.io/netgnarus/intentgate-gateway:${INTENTGATE_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      extractor: { condition: service_started }
+    environment:
+      INTENTGATE_ADDR: ":8080"
+      INTENTGATE_MASTER_KEY: "${INTENTGATE_MASTER_KEY:?set in .env}"
+      INTENTGATE_ADMIN_TOKEN: "${INTENTGATE_ADMIN_TOKEN:?set in .env}"
+      INTENTGATE_REQUIRE_CAPABILITY: "true"
+      INTENTGATE_REQUIRE_INTENT: "true"
+      INTENTGATE_REQUIRE_BUDGET: "true"
+      INTENTGATE_EXTRACTOR_URL: "http://extractor:8090"
+      INTENTGATE_UPSTREAM_URL: "${INTENTGATE_UPSTREAM_URL:?set in .env}"
+      # Shared budget counters across all replicas — THE key HA setting:
+      INTENTGATE_REDIS_URL: "${INTENTGATE_REDIS_URL:-redis://redis:6379/0}"
+      INTENTGATE_POSTGRES_URL: "${INTENTGATE_POSTGRES_URL:-postgres://intentgate:${POSTGRES_PASSWORD}@postgres:5432/intentgate?sslmode=disable}"
+      INTENTGATE_POLICY_STORE: "postgres"
+      INTENTGATE_APPROVALS_BACKEND: "postgres"
+      INTENTGATE_AUDIT_PERSIST: "true"
+      INTENTGATE_AUDIT_TARGET: "stdout"
+      INTENTGATE_METRICS_ENABLED: "true"
+    deploy:
+      replicas: 2
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    networks: [internal]
+
+  # ---- load balancer (the single entry point agents call) -------------
+  lb:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      gateway: { condition: service_started }
+    volumes:
+      - ./nginx-lb.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "${GATEWAY_BIND:-0.0.0.0}:8080:8080"
+    networks: [internal]
+
+  # ---- console (single instance, off the traffic path) ----------------
+  console:
+    image: ghcr.io/netgnarus/intentgate-console-pro:${INTENTGATE_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      lb: { condition: service_started }
+      postgres: { condition: service_healthy }
+    environment:
+      # Talks to the gateways through the load balancer:
+      INTENTGATE_GATEWAY_URL: "http://lb:8080"
+      INTENTGATE_PUBLIC_GATEWAY_URL: "${INTENTGATE_PUBLIC_GATEWAY_URL:?set in .env}"
+      INTENTGATE_ADMIN_TOKEN: "${INTENTGATE_ADMIN_TOKEN}"
+      INTENTGATE_LICENSE_KEY: "${INTENTGATE_LICENSE_KEY:?set in .env}"
+      SCIM_DATABASE_URL: "${INTENTGATE_POSTGRES_URL:-postgres://intentgate:${POSTGRES_PASSWORD}@postgres:5432/intentgate?sslmode=disable}"
+      INTENTGATE_OWNER_EMAIL_DOMAINS: "${INTENTGATE_OWNER_EMAIL_DOMAINS:?set in .env}"
+      INTENTGATE_TOTP_ENCRYPTION_KEY: "${INTENTGATE_TOTP_ENCRYPTION_KEY:?set in .env}"
+      INTENTGATE_POLICY_REQUEST_WEBHOOK_URL: "${INTENTGATE_POLICY_REQUEST_WEBHOOK_URL:-}"
+      INTENTGATE_REPORTS_API_TOKEN: "${INTENTGATE_REPORTS_API_TOKEN:-}"
+      INTENTGATE_DISCOVERY_SYNC_TOKEN: "${INTENTGATE_DISCOVERY_SYNC_TOKEN:-}"
+      AUTH_PROVIDER: "oidc"
+      AUTH_SECRET: "${AUTH_SECRET:?set in .env}"
+      NEXTAUTH_URL: "${CONSOLE_PUBLIC_URL:?set in .env}"
+      OIDC_ISSUER: "${OIDC_ISSUER:-}"
+      OIDC_CLIENT_ID: "${OIDC_CLIENT_ID:-}"
+      OIDC_CLIENT_SECRET: "${OIDC_CLIENT_SECRET:-}"
+    ports:
+      - "${CONSOLE_BIND:-0.0.0.0}:3000:3000"
+    networks: [internal]
+
+volumes:
+  pg-data:
+
+networks:
+  internal:
+    driver: bridge
