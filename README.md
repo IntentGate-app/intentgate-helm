@@ -8,6 +8,13 @@ Deploys the [IntentGate gateway](https://github.com/IntentGate-app/intentgate-ga
 and (optionally) the [intent extractor](https://github.com/IntentGate-app/intentgate-extractor)
 into a Kubernetes cluster.
 
+## Two ways to deploy
+
+| Path | Use when | Where |
+| ---- | -------- | ----- |
+| **Helm chart** (this repo root) | You run Kubernetes and want replicas, autoscaling, and managed Redis/Postgres. | `helm install …` — see below. |
+| **Docker Compose** | A pilot or a single production host, no Kubernetes. | [`compose/`](compose/) — a one-command starter, plus an HA stack (2 gateway replicas + nginx load balancer + shared Redis). Start with [`compose/README.md`](compose/README.md) and the plain-language [prerequisites guide](compose/IntentGate-Before-You-Install.html). |
+
 ## Companion repositories
 
 | Repo | Purpose |
