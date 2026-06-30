@@ -118,9 +118,12 @@ spec:
 Verify it works: from anything that is **not** the gateway, a direct call to
 the tool server should be **refused**.
 
-> Note: today bypass-prevention is network/identity-layer (the above). The
-> gateway does not yet inject the upstream credential, so this segmentation
-> is what guarantees the gateway is the only door.
+> Defense in depth: pair this network rule with **credential brokering** —
+> set `INTENTGATE_UPSTREAM_AUTH_HEADER="Authorization: Bearer <tool-secret>"`
+> on the gateway so it holds the tool credential and injects it on every
+> call. Agents authenticate to the gateway with a capability token and never
+> hold the tool secret, so even an agent that reaches the tool directly has
+> no credential to authenticate with.
 
 ---
 
