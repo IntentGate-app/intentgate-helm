@@ -47,13 +47,13 @@ services:
     networks: [internal]
 
   extractor:
-    image: ghcr.io/netgnarus/intentgate-extractor:${INTENTGATE_VERSION:-latest}
+    image: ghcr.io/intentgate-app/intentgate-extractor:${INTENTGATE_VERSION:-latest}
     restart: unless-stopped
     networks: [internal]
 
   # ---- gateway replicas (no host port; the load balancer fronts them) -
   gateway:
-    image: ghcr.io/netgnarus/intentgate-gateway:${INTENTGATE_VERSION:-latest}
+    image: ghcr.io/intentgate-app/intentgate-gateway:${INTENTGATE_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       postgres: { condition: service_healthy }
@@ -100,7 +100,7 @@ services:
 
   # ---- console (single instance, off the traffic path) ----------------
   console:
-    image: ghcr.io/netgnarus/intentgate-console-pro:${INTENTGATE_VERSION:-latest}
+    image: ghcr.io/intentgate-app/intentgate-console-pro:${INTENTGATE_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       lb: { condition: service_started }

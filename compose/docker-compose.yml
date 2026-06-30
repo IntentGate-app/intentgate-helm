@@ -36,13 +36,13 @@ services:
   # gateway's intent check uses. Runs in STUB mode by default (keyword
   # heuristics, no API key). Set an LLM backend for production accuracy.
   extractor:
-    image: ghcr.io/netgnarus/intentgate-extractor:${INTENTGATE_VERSION:-latest}
+    image: ghcr.io/intentgate-app/intentgate-extractor:${INTENTGATE_VERSION:-latest}
     restart: unless-stopped
     networks: [internal]
 
   # ---- gateway (data plane / enforcement) ----------------------------
   gateway:
-    image: ghcr.io/netgnarus/intentgate-gateway:${INTENTGATE_VERSION:-latest}
+    image: ghcr.io/intentgate-app/intentgate-gateway:${INTENTGATE_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       postgres: { condition: service_healthy }
@@ -77,7 +77,7 @@ services:
 
   # ---- console (control plane / UI) ----------------------------------
   console:
-    image: ghcr.io/netgnarus/intentgate-console-pro:${INTENTGATE_VERSION:-latest}
+    image: ghcr.io/intentgate-app/intentgate-console-pro:${INTENTGATE_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       gateway: { condition: service_healthy }
