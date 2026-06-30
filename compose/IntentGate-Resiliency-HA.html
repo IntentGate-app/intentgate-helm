@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IntentGate — Resiliency &amp; High Availability</title>
+<style>
+  :root{
+    --ink:#13303f; --muted:#5b6b76; --soft:#7d8a93; --line:#e6e1d6;
+    --teal:#0892c0; --teal-d:#0b4a63; --bg:#faf8f3; --card:#ffffff;
+    --amber:#c47f12; --soft-teal:#eef6fa; --indigo:#6366f1;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:48px 28px 80px}
+  header.hd{border-bottom:3px solid var(--teal);padding-bottom:22px;margin-bottom:8px}
+  .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:800;margin:0 0 8px}
+  h1{font-size:29px;line-height:1.2;margin:0 0 10px;font-weight:800;letter-spacing:-.01em}
+  .sub{font-size:16px;color:var(--muted);margin:0;max-width:64ch}
+  h2{font-size:20px;margin:42px 0 6px;font-weight:800;letter-spacing:-.01em}
+  h2 .n{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:8px;
+    background:var(--teal);color:#fff;font-size:14px;margin-right:10px;vertical-align:2px;font-weight:800}
+  h3{font-size:15.5px;margin:22px 0 2px;font-weight:800}
+  p{margin:10px 0}
+  .lead{font-size:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0;
+    box-shadow:0 1px 2px rgba(20,48,63,.04)}
+  .why{border-left:3px solid var(--amber);padding:2px 0 2px 14px;margin:13px 0 4px;color:var(--muted)}
+  .why b{color:var(--ink)}
+  .pill{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    border-radius:999px;padding:3px 10px}
+  .pill.you{background:#fde9c8;color:#7a4d05}
+  .pill.box{background:#d7f0e4;color:#0b5e3e}
+  .prov{margin-top:12px;font-size:14px;color:var(--muted)}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  .tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;background:#f0ece2;padding:1px 6px;border-radius:5px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14.5px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#f3efe6;font-weight:700;font-size:13px;color:var(--teal-d)}
+  td code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+  .check{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:14px 0}
+  .check h3{margin-top:0}
+  ul.box{list-style:none;margin:8px 0 0;padding:0}
+  ul.box li{position:relative;padding:7px 0 7px 34px;border-bottom:1px dashed var(--line);font-size:15px}
+  ul.box li:last-child{border-bottom:none}
+  ul.box li:before{content:"";position:absolute;left:2px;top:10px;width:18px;height:18px;border:2px solid var(--teal);border-radius:5px}
+  ul.box li small{display:block;color:var(--soft);font-size:13px}
+  pre{background:#0f242e;color:#e8eef1;border-radius:10px;padding:14px 16px;overflow:auto;font-size:13px;line-height:1.5}
+  pre .c{color:#8aa0ab}
+  .legend{font-size:13px;color:var(--soft);margin:8px 0 0}
+  .legend .pill{margin-right:6px}
+  .starnote{color:var(--amber);font-weight:800}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--soft);font-size:13px}
+  @media print{body{background:#fff}.card,.check{box-shadow:none}pre{background:#f3efe6;color:#13303f}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hd">
+  <p class="kicker">IntentGate · Operations</p>
+  <h1>Resiliency &amp; High Availability</h1>
+  <p class="sub">How to run IntentGate so that no single failure stops enforcement: multiple gateways behind a load balancer, a shared Redis for budgets, and managed PostgreSQL. This is the production companion to the single-node install guide.</p>
+</header>
+
+<p class="legend"><span class="pill you">You provide</span> set up &amp; owned by your team &nbsp;·&nbsp; <span class="pill box">In the box</span> ships with IntentGate</p>
+
+<h2>When you need this</h2>
+<p class="lead">A single host is the right choice for a pilot — simple, one of everything. You move to this design for production, where one crash, restart, or deploy must never take enforcement offline. The gateway sits in the request path between your agents and your tools, so if it stops, agents stop. High availability removes that single point of failure.</p>
+
+<h2>The architecture</h2>
+<p>Three changes turn the single-node stack into a highly-available one: run <b>several gateways behind a load balancer</b>, give them a <b>shared Redis</b> so budgets stay consistent, and move to <b>managed PostgreSQL</b> with failover. The console stays a single instance — it is off the request path, so it is not part of the availability story for enforcement.</p>
+
+<figure style="margin:18px 0 6px">
+<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;border:1px solid var(--line);border-radius:14px;background:#fff" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#56666f"/></marker>
+    <marker id="ard" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9aa7b3"/></marker>
+  </defs>
+  <rect x="22" y="60" width="956" height="516" rx="16" fill="#faf8f3" stroke="#cdd6dd" stroke-dasharray="6 5"/>
+  <text x="40" y="84" font-size="12" font-weight="700" letter-spacing="0.5" fill="#7d8a93">CUSTOMER ENVIRONMENT · high availability</text>
+  <rect x="48" y="250" width="124" height="124" rx="10" fill="#fff" stroke="#cdd6dd"/>
+  <text x="110" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#13303f">Agents</text>
+  <rect x="62" y="262" width="96" height="28" rx="6" fill="#f1f4f6"/><text x="110" y="280" text-anchor="middle" font-size="11" fill="#5b6b76">agent</text>
+  <rect x="62" y="298" width="96" height="28" rx="6" fill="#f1f4f6"/><text x="110" y="316" text-anchor="middle" font-size="11" fill="#5b6b76">agent</text>
+  <rect x="62" y="334" width="96" height="28" rx="6" fill="#f1f4f6"/><text x="110" y="352" text-anchor="middle" font-size="11" fill="#5b6b76">agent</text>
+  <rect x="240" y="282" width="112" height="60" rx="10" fill="#eef6fa" stroke="#0892c0"/>
+  <text x="296" y="308" text-anchor="middle" font-size="13" font-weight="700" fill="#0b4a63">Load</text>
+  <text x="296" y="325" text-anchor="middle" font-size="13" font-weight="700" fill="#0b4a63">balancer</text>
+  <rect x="446" y="206" width="174" height="68" rx="12" fill="#fff" stroke="#0892c0" stroke-width="2.5"/>
+  <text x="533" y="234" text-anchor="middle" font-size="14" font-weight="800" fill="#13303f">Gateway</text>
+  <text x="533" y="252" text-anchor="middle" font-size="12" fill="#0892c0">replica 1</text>
+  <rect x="446" y="346" width="174" height="68" rx="12" fill="#fff" stroke="#0892c0" stroke-width="2.5"/>
+  <text x="533" y="374" text-anchor="middle" font-size="14" font-weight="800" fill="#13303f">Gateway</text>
+  <text x="533" y="392" text-anchor="middle" font-size="12" fill="#0892c0">replica 2</text>
+  <text x="533" y="312" text-anchor="middle" font-size="11" font-style="italic" fill="#7d8a93">stateless · scale to N</text>
+  <rect x="730" y="276" width="166" height="68" rx="12" fill="#fff" stroke="#cdd6dd"/>
+  <text x="813" y="304" text-anchor="middle" font-size="13.5" font-weight="700" fill="#13303f">Tool / MCP</text>
+  <text x="813" y="323" text-anchor="middle" font-size="13.5" font-weight="700" fill="#13303f">servers</text>
+  <rect x="446" y="92" width="174" height="58" rx="12" fill="#fff" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="533" y="117" text-anchor="middle" font-size="13.5" font-weight="700" fill="#13303f">Console</text>
+  <text x="533" y="135" text-anchor="middle" font-size="11.5" fill="#7d6cb0">control plane · single</text>
+  <rect x="298" y="462" width="162" height="58" rx="12" fill="#fff" stroke="#6366f1"/>
+  <text x="379" y="487" text-anchor="middle" font-size="13.5" font-weight="800" fill="#13303f">Redis</text>
+  <text x="379" y="505" text-anchor="middle" font-size="11" fill="#6366f1">shared budget · one total</text>
+  <rect x="688" y="452" width="218" height="96" rx="12" fill="#fff" stroke="#6366f1"/>
+  <text x="797" y="476" text-anchor="middle" font-size="13" font-weight="800" fill="#13303f">Managed PostgreSQL</text>
+  <rect x="702" y="486" width="92" height="46" rx="7" fill="#eef1fb"/><text x="748" y="508" text-anchor="middle" font-size="11" fill="#4b4fa6">primary</text><text x="748" y="522" text-anchor="middle" font-size="9.5" fill="#8a8fc4">policies·audit</text>
+  <rect x="800" y="486" width="92" height="46" rx="7" fill="#f3f4fb"/><text x="846" y="508" text-anchor="middle" font-size="11" fill="#7d80b8">standby</text><text x="846" y="522" text-anchor="middle" font-size="9.5" fill="#a7abce">failover</text>
+  <line x1="172" y1="312" x2="238" y2="312" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="205" y="304" text-anchor="middle" font-size="10.5" fill="#7d8a93">calls</text>
+  <line x1="352" y1="302" x2="444" y2="244" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="352" y1="322" x2="444" y2="378" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="398" y="290" text-anchor="middle" font-size="10.5" fill="#7d8a93">balanced</text>
+  <line x1="620" y1="244" x2="730" y2="302" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="620" y1="378" x2="730" y2="322" stroke="#56666f" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="678" y="356" text-anchor="middle" font-size="10.5" fill="#7d8a93">approved calls</text>
+  <line x1="446" y1="262" x2="384" y2="462" stroke="#6366f1" stroke-width="1.7"/>
+  <line x1="446" y1="398" x2="404" y2="462" stroke="#6366f1" stroke-width="1.7"/>
+  <line x1="592" y1="274" x2="724" y2="452" stroke="#6366f1" stroke-width="1.7"/>
+  <line x1="596" y1="414" x2="762" y2="452" stroke="#6366f1" stroke-width="1.7"/>
+  <line x1="470" y1="150" x2="320" y2="280" stroke="#9aa7b3" stroke-width="1.7" stroke-dasharray="5 4" marker-end="url(#ard)"/>
+  <text x="360" y="210" text-anchor="middle" font-size="10.5" fill="#9aa7b3">admin API</text>
+  <line x1="572" y1="150" x2="792" y2="452" stroke="#9aa7b3" stroke-width="1.7" stroke-dasharray="5 4"/>
+  <text x="690" y="250" text-anchor="middle" font-size="10.5" fill="#9aa7b3">inventory</text>
+</svg>
+<figcaption style="font-size:12.5px;color:var(--soft);margin-top:8px">Solid lines: the agent traffic path. Blue lines: shared state (Redis budgets, PostgreSQL). Dashed lines: the console managing the platform, off the traffic path.</figcaption>
+</figure>
+
+<hr>
+
+<h2><span class="n">1</span>The gateways</h2>
+<div class="card">
+  <p>Run two or more gateway replicas. Each one is <b>stateless on the request path</b> — it loads policy into memory, makes its decision in-process, streams audit out, and keeps no per-request session. That is what makes horizontal scaling safe: any replica can serve any request, so adding copies increases throughput and removes the single point of failure, with no coordination between them on the hot path.</p>
+  <p>Every replica runs the <b>same configuration</b> — same upstream, same database URL, same Redis URL. You scale by changing a replica count, nothing else.</p>
+  <div class="why"><b>Health.</b> Each replica serves <span class="tag">GET /healthz</span> (HTTP 200 when ready). The load balancer uses this to decide which replicas receive traffic.</div>
+  <p class="prov"><span class="pill you">You provide</span> the orchestration (Kubernetes replica count, or Compose scale). <span class="pill box">In the box</span> the gateway image and its stateless design.</p>
+</div>
+
+<h2><span class="n">2</span>The load balancer</h2>
+<div class="card">
+  <p><b>Who owns it.</b> <span class="pill you">You do.</span> The load balancer is part of <i>your</i> infrastructure — your cloud load balancer (AWS ALB/NLB, Google Cloud Load Balancing, Azure Load Balancer), or a reverse proxy you run (NGINX, HAProxy, Traefik), or, on Kubernetes, a Service plus Ingress. IntentGate does not provide your production load balancer. The HA bundle includes a <b>small NGINX load balancer purely so you can run and test the topology on one host</b> (<span class="tag">nginx-lb.conf</span>); it is a reference, not a production component.</p>
+
+  <h3>How it works</h3>
+  <p>The load balancer is the <b>single address your agents call</b> — it is what <span class="tag">INTENTGATE_PUBLIC_GATEWAY_URL</span> points at. It receives each agent request and forwards it to one of the healthy gateway replicas. When a replica fails its health check, the load balancer stops sending it traffic; when it recovers, traffic resumes. Agents only ever know the one load-balancer address, never the individual replicas.</p>
+
+  <h3>What to configure</h3>
+  <table>
+    <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+    <tr><td><b>Backend pool</b></td><td>the gateway replicas, port <code>8080</code></td><td>The targets traffic is spread across.</td></tr>
+    <tr><td><b>Algorithm</b></td><td>round-robin or least-connections</td><td>Either is fine — the gateway is stateless, so any replica can serve any request.</td></tr>
+    <tr><td><b>Session affinity</b></td><td><b>off</b> (no sticky sessions)</td><td><span class="starnote">Important:</span> do <b>not</b> pin a client to a replica. There is no session state to preserve, and stickiness only unbalances load and slows failover.</td></tr>
+    <tr><td><b>Health check</b></td><td>HTTP <code>GET /healthz</code>, expect <code>200</code>; interval ~10s; eject after 2–3 failures</td><td>This is how a dead or restarting replica is removed from rotation automatically.</td></tr>
+    <tr><td><b>TLS</b></td><td>terminate HTTPS at the LB with your certificate</td><td>Agents call <code>https://gateway…</code>; the LB decrypts and forwards to replicas over your trusted internal network. (TLS pass-through is also fine if you prefer the gateway to terminate.)</td></tr>
+    <tr><td><b>Timeouts</b></td><td>connect ~5s; read timeout ≥ your slowest upstream tool</td><td>The gateway forwards to your tool server, so the read timeout must allow for that tool's latency.</td></tr>
+    <tr><td><b>Retry / failover</b></td><td>retry the next replica on connection error or 502/503/504</td><td>So a replica dying mid-request doesn't fail the agent's call — it's retried on a healthy one.</td></tr>
+    <tr><td><b>Forwarded headers</b></td><td>set <code>X-Forwarded-For</code> / <code>X-Real-IP</code></td><td>Auth is token-based, but the real client IP is useful in audit and logs.</td></tr>
+  </table>
+  <div class="why"><b>The bundled reference.</b> <span class="tag">nginx-lb.conf</span> implements exactly this — round-robin across replicas via the container DNS, per-request resolution so scaling needs no proxy restart, a <code>/healthz</code>-aware backend, and <code>proxy_next_upstream</code> retry. Read it as a worked example, then reproduce the same settings on your real load balancer.</p></div>
+  <p class="prov"><span class="pill you">You provide</span> the production load balancer and its TLS certificate. <span class="pill box">In the box</span> a working NGINX reference for testing.</p>
+</div>
+
+<h2><span class="n">3</span>Redis (shared budget)</h2>
+<div class="card">
+  <p><b>What it does.</b> Redis holds the gateway's <b>budget counters</b> — the running totals behind per-agent spend limits and rate limits. Nothing else. It is not a cache for policy or audit; it is the one piece of state the replicas must agree on.</p>
+  <table>
+    <tr><th>Deployment</th><th>Redis?</th><th>Why</th></tr>
+    <tr><td><b>Single gateway</b></td><td><b>Not used</b></td><td>One process is already one source of truth, so counters live in memory. Adding Redis would change nothing. The single-node bundle ships no Redis.</td></tr>
+    <tr><td><b>Multiple gateways</b></td><td><b>Required</b></td><td>Each replica would otherwise keep its own counters, so a "€10k/day" limit becomes "€10k × replica count." One shared Redis makes all replicas increment <b>one atomic counter</b>, so the limit holds across the fleet.</td></tr>
+  </table>
+  <p>You turn it on by setting <span class="tag">INTENTGATE_REDIS_URL</span> on <b>every</b> gateway replica. The gateway validates the connection at startup, so a wrong URL fails fast rather than silently falling back.</p>
+  <div class="why"><b>Who owns it.</b> Same model as the database. <span class="pill box">In the box</span> the HA bundle includes a single Redis container so you can test the topology on one host — but a lone Redis is itself a single point of failure. <span class="pill you">For production you provide a managed / highly-available Redis</span> (with failover), point <span class="tag">INTENTGATE_REDIS_URL</span> at it, and delete the bundled container.</p></div>
+</div>
+
+<h2><span class="n">4</span>PostgreSQL (managed)</h2>
+<div class="card">
+  <p>Policies, audit, and inventory live in PostgreSQL. For HA, replace the bundled single instance with your own <b>managed PostgreSQL with failover</b> (RDS, Cloud SQL, Patroni, etc.) and point the gateways and console at it.</p>
+  <div class="why"><b>Why it's not the weak link.</b> Enforcement does <b>not</b> read the database on the request path — policy is in memory and audit is streamed out. So a database interruption degrades <i>management and reporting</i>, not <i>protection</i>: the gateways keep deciding allow/deny while Postgres is briefly unavailable.</p></div>
+  <p class="prov"><span class="pill you">You provide</span> managed PostgreSQL. Point every gateway and the console at it via <span class="tag">INTENTGATE_POSTGRES_URL</span> / <span class="tag">SCIM_DATABASE_URL</span>.</p>
+</div>
+
+<h2><span class="n">5</span>The console</h2>
+<div class="card">
+  <p>The console is the management UI. It is <b>off the request path</b>, so it is not part of enforcement availability: if it restarts or is down, agents keep calling and the gateways keep enforcing — you simply can't change settings until it returns. One instance is fine; run two behind the load balancer only if you want the UI itself to be highly available.</p>
+</div>
+
+<hr>
+
+<h2>Failure modes</h2>
+<table>
+  <tr><th>What fails</th><th>What happens</th></tr>
+  <tr><td>One gateway replica</td><td>The load balancer's health check ejects it; the others carry the traffic. No impact with ≥2 replicas.</td></tr>
+  <tr><td>All gateway replicas</td><td>Agents cannot reach the tools at all — <b>fail-closed</b>. No ungoverned calls slip through; the fix is enough replicas, not fail-open.</td></tr>
+  <tr><td>The load balancer</td><td>Use a managed cloud LB (already redundant) or run the proxy in two zones. This is why a single bundled NGINX is test-only.</td></tr>
+  <tr><td>Redis</td><td>Budget enforcement is affected; use managed Redis with failover. Other checks (capability, intent, policy) are unaffected.</td></tr>
+  <tr><td>PostgreSQL</td><td>Management &amp; reporting pause; <b>enforcement continues</b> (policy in memory, audit buffered to the stream).</td></tr>
+  <tr><td>The console</td><td>No effect on enforcement; you lose the management UI until it's back.</td></tr>
+</table>
+
+<h2>Scaling up or down</h2>
+<p>Because the gateway is stateless, scaling is a single number.</p>
+<pre><span class="c"># Docker Compose (HA bundle)</span>
+docker compose -f docker-compose.ha.yml up -d --scale gateway=4
+
+<span class="c"># Kubernetes (Helm chart)</span>
+helm upgrade intentgate ./intentgate --set gateway.replicas=4</pre>
+<p>New replicas register with the load balancer's health check and start taking traffic; removed ones drain as their health check stops passing. No coordination, no migration.</p>
+
+<h2>Kubernetes vs Compose</h2>
+<table>
+  <tr><th>Layer</th><th>Docker Compose (HA bundle)</th><th>Kubernetes (Helm)</th></tr>
+  <tr><td>Replicas</td><td><code>--scale gateway=N</code></td><td><code>gateway.replicas: N</code></td></tr>
+  <tr><td>Load balancer</td><td>bundled NGINX (test) → your LB</td><td>Service + Ingress / cloud LB</td></tr>
+  <tr><td>Redis</td><td>bundled (test) → managed Redis</td><td><code>redisUrl</code> → managed Redis</td></tr>
+  <tr><td>PostgreSQL</td><td><code>INTENTGATE_POSTGRES_URL</code> → managed</td><td>external managed Postgres</td></tr>
+</table>
+<p>Compose is fine for a single production host or staging; Kubernetes is the path for multi-node, autoscaling, multi-zone production.</p>
+
+<h2>Configuration reference</h2>
+<table>
+  <tr><th>Variable</th><th>Set on</th><th>Purpose</th></tr>
+  <tr><td><code>INTENTGATE_REDIS_URL</code></td><td>every gateway replica</td><td>Shared budget counters. Required with &gt;1 replica.</td></tr>
+  <tr><td><code>INTENTGATE_POSTGRES_URL</code></td><td>every gateway replica</td><td>Managed PostgreSQL (policies, audit).</td></tr>
+  <tr><td><code>SCIM_DATABASE_URL</code></td><td>console</td><td>Same managed PostgreSQL (inventory).</td></tr>
+  <tr><td><code>INTENTGATE_PUBLIC_GATEWAY_URL</code></td><td>console</td><td>The load-balancer address agents are given.</td></tr>
+  <tr><td><code>GET /healthz</code></td><td>(endpoint)</td><td>Load-balancer health check target on each replica.</td></tr>
+</table>
+
+<hr>
+
+<h2>HA readiness checklist</h2>
+<div class="check">
+  <h3>Production high-availability</h3>
+  <ul class="box">
+    <li>Two or more gateway replicas, all with identical configuration</li>
+    <li>A load balancer you own, fronting the replicas <small>— round-robin, no session affinity, <code>/healthz</code> health check, retry on failure</small></li>
+    <li>TLS terminated at the load balancer with a valid certificate</li>
+    <li><code>INTENTGATE_REDIS_URL</code> set on every replica, pointing at managed Redis with failover</li>
+    <li>Managed PostgreSQL with failover, referenced by every gateway and the console</li>
+    <li>Agents configured with the load-balancer address, never an individual replica</li>
+    <li>Failure drill done: kill one replica, confirm traffic continues</li>
+  </ul>
+</div>
+
+<footer>
+  IntentGate — Resiliency &amp; High Availability. Companion files in this folder: <b>docker-compose.ha.yml</b> (runnable HA stack), <b>nginx-lb.conf</b> (load-balancer reference), and <b>IntentGate-Before-You-Install.html</b> (single-node install &amp; prerequisites).
+</footer>
+
+</div>
+</body>
+</html>
