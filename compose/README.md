@@ -67,6 +67,63 @@ URL agents will call (`INTENTGATE_PUBLIC_GATEWAY_URL`), the console URL
 
 ---
 
+## Lock the tool server to the gateway (prevent bypass)
+
+**The single most important security step.** IntentGate only enforces if the
+gateway is the *only* path to your tools. If an agent can reach the tool
+server directly, it bypasses every check. So restrict the tool server to
+accept traffic **only from the gateway**. Pick the one that matches your
+environment (the console's **Setup → Secure** step generates these for you):
+
+**Host firewall / cloud security group**
+
+```bash
+# On the tool-server host — accept its port ONLY from the gateway:
+iptables -A INPUT -p tcp --dport 8090 -s <gateway-ip> -j ACCEPT
+iptables -A INPUT -p tcp --dport 8090 -j DROP            # everyone else
+# AWS: tool-server security group inbound rule —
+#   Custom TCP, port 8090, Source: <gateway-security-group-id>  (only)
+```
+
+**Kubernetes (NetworkPolicy)**
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: tools-only-from-gateway }
+spec:
+  podSelector: { matchLabels: { app: toolserver } }
+  policyTypes: [ Ingress ]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: intentgate-gateway } }
+      ports: [ { protocol: TCP, port: 8090 } ]
+# default-deny all other ingress to the tool pods
+```
+
+**Service mesh (Istio — identity, not just network)**
+
+```yaml
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: { name: tools-only-gateway }
+spec:
+  selector: { matchLabels: { app: toolserver } }
+  action: ALLOW
+  rules:
+    - from: [ { source: { principals: ["cluster.local/ns/intentgate/sa/intentgate-gateway"] } } ]
+# pair with PeerAuthentication mtls: STRICT so identity is cryptographic
+```
+
+Verify it works: from anything that is **not** the gateway, a direct call to
+the tool server should be **refused**.
+
+> Note: today bypass-prevention is network/identity-layer (the above). The
+> gateway does not yet inject the upstream credential, so this segmentation
+> is what guarantees the gateway is the only door.
+
+---
+
 ## Path A — Single host (pilot)
 
 **3A — Bring it up.**
